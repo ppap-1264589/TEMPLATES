@@ -1,7 +1,6 @@
 #include <bits/stdc++.h>
 #define Task "A"
 #define void inline void
-#define bool inline bool
 #define up(i,a,b) for (int i = int(a); i <= int(b); i++)
 #define down(i,a,b) for (int i = int(a); i >= int(b); i--)
 #define bit(x,i) ((x >> i) & 1)
