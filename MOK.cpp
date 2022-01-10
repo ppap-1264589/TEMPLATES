@@ -1,9 +1,8 @@
 /// map of knowledge
-//+ Binary Lifting
-//+ Stack-Queue-Deque
 //+ Hash Table
 //+ Trie Tree
 //+ Sparse Table - RMQ
+//+ Binary Lifting
 //+ Matrix
 //+ DSU
 //+ Joints - Bridges
@@ -18,3 +17,8 @@
 //+ Longest Path
 //+ Center Node
 //+ Bin-Tern Search
+//+ Stack-Queue-Deque
+//- Maxflow - Bipartite
+//- Convex Hull
+//- Extended Euclidean
+//- Sqrt-Decomposition
