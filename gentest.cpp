@@ -8,9 +8,9 @@
 #include "direct.h"
 #define up(i,a,b) for (int i = (int)a; i <= (int)b; i++)
 #define down(i,a,b) for (int i = (int)a; i >= (int)b; i--)
-#define pii pair<int, int>
-#define f first
-#define s second
+#define pii pair<long long, long long>
+#define x first
+#define y second
 #define MP make_pair
 #define ep emplace_back
 #define bit(x, i) (((x) >> (i)) & 1)
@@ -18,23 +18,9 @@
 #define isTLE (1.0*clock()/CLOCKS_PER_SEC > 0.95)
 #define MAX_ARR_SIZE 486010000
 #define int long long
+#define PI 3.14159265359
 using namespace std;
 const int MOD = 1e9 + 7;
-
-template<class X, class Y>
-bool Minim(X &x, const Y &y) {
-    X eps = 1e-9;
-    return (x > y + eps ? (x = y) : 0);
-}
-
-template<class X, class Y>
-bool Maxim(X &x, const Y &y) {
-    X eps = 1e-9;
-    return (x < y - eps ? (x = y) : 0);
-}
-
-
-
 
 
 
@@ -42,7 +28,7 @@ bool Maxim(X &x, const Y &y) {
 /** --------------- Define Random Generation --------------- **/
 mt19937 RNG(chrono::high_resolution_clock::now().time_since_epoch().count());
 int UID(int l, int r){
-    uniform_int_distribution<mt19937::result_type> random_number(l, r);
+    uniform_int_distribution<int> random_number(l, r);
     return random_number(RNG);
 }
 
@@ -76,14 +62,12 @@ int maxtest;
 bool return_test;
 ofstream fo;
 ofstream rfo("DRAFT.out");  // <- table of contents of testcases
-char NAME_file[] = "SORTING";  // <- Enter your "Task name" here
-char exe_file[100] = "CHECKER"; // <= Enter your "Checker name" here
+ofstream afo("A.out");
+char NAME_file[] = "";  // <- Enter your "Task name" here
+char exe_file[100] = ""; // <= Enter your "Checker name" here
 char inp_file[100] = "";
 char out_file[100] = "";
 string folder = "Test000";
-
-
-
 
 
 /** ----------------- Define File Behaviour ------------------ **/
@@ -112,13 +96,118 @@ void Make_file_name(){
 
 
 
+/** ----------------- Default Random Algorithm ------------------ **/
+namespace ConvexHull{
+    const double eps = 1e-9;
+    bool comp_angle(const pii& X, const pii& Y){
+        double A1 = atan2(X.y, X.x) * 180 / PI;
+        double A2 = atan2(Y.y, Y.x) * 180 / PI;
+        return (A1 + eps < A2);
+    }
+
+    vector<int> x_init;
+    vector<int> y_init;
+    void random_points(int n, int MINX, int MAXX, int MINY, int MAXY){
+        up(i,1,n){
+            int x = UID(MINX, MAXX);
+            int y = UID(MINY, MAXY);
+            x_init.ep(x);
+            y_init.ep(y);
+        }
+    }
+
+    vector<int> Xcoor;
+    vector<int> Ycoor;
+    int minX, minY, maxX, maxY;
+
+    vector<int> to_vect_coor(vector<int>& COOR, int MIN, int MAX){
+        vector<int> res;
+        int lastmin, lastmax;
+        lastmin = lastmax = MIN;
+        up(i,1,COOR.size()-2){
+            int p = COOR[i];
+            if (UID(0, 1)){
+                res.ep(p - lastmin);
+                lastmin = p;
+            }
+            else{
+                res.ep(lastmax - p);
+                lastmax = p;
+            }
+        }
+        res.ep(MAX - lastmin);
+        res.ep(lastmax - MAX);
+        return res;
+    }
+
+    void random_convex_vector(){
+        sort(all(x_init));
+        sort(all(y_init));
+        minX = *x_init.begin();
+        maxX = *x_init.rbegin();
+        minY = *y_init.begin();
+        maxY = *y_init.rbegin();
+
+        Xcoor = to_vect_coor(x_init, minX, maxX);
+        Ycoor = to_vect_coor(y_init, minY, maxY);
+        shuffle(all(Ycoor), RNG);
+    }
+
+
+    int sumx, sumy;
+    int minpolyX, minpolyY;
+    vector<pii> convex;
+    void Consecutive_generate(int n){
+        vector<pii> V;
+        up(i,1,n) V.push_back(make_pair(Xcoor[i-1], Ycoor[i-1]));
+        sort(all(V), comp_angle);
+
+        for (auto p : V){
+            convex.push_back(make_pair(sumx, sumy));
+            sumx += p.x;
+            sumy += p.y;
+            minpolyX = min(minpolyX, sumx);
+            minpolyY = min(minpolyY, sumy);
+        }
+    }
+
+    void shift_back(){
+        int xShift = minX - minpolyX;
+        int yShift = minY - minpolyY;
+
+        pii Root = make_pair(1e18, 1e18);
+        for (auto& p : convex){
+            p.x += xShift;
+            p.y += yShift;
+            Root = min(Root, make_pair(p.x, p.y));
+        }
+        while (convex.front() != Root){
+            pii k = convex.front();
+            convex.erase(convex.begin());
+            convex.push_back(k);
+        }
+    }
+
+    vector<pii> random_convex_hull(int n, int MINX, int MAXX, int MINY, int MAXY){
+        random_points(n, MINX, MAXX, MINY, MAXY);
+        random_convex_vector();
+        Consecutive_generate(n);
+        shift_back();
+        return convex;
+    }
+}
+
+
+
+
 /** ----------------- Main Processes ------------------ **/
+
 void prepare_test(){
 
 }
 
 void detail_test(int& test){
-    fo << UID(1, 1000);
+
 }
 
 void generate_test(){
@@ -127,6 +216,7 @@ void generate_test(){
     up(test, 1, maxtest){
         return_test = 0;
         fo.open(inp_file);
+        fo.clear();
         detail_test(test);
         if (return_test == 1) {
             fo.close();
