@@ -94,14 +94,12 @@ void Make_file_name(){
 }
 
 
-
-
 /** ----------------- Default Random Algorithm ------------------ **/
 namespace ConvexHull{
     const double eps = 1e-9;
     bool comp_angle(const pii& X, const pii& Y){
-        double A1 = atan2(X.y, X.x) * 180 / PI;
-        double A2 = atan2(Y.y, Y.x) * 180 / PI;
+        double A1 = atan2(X.y, X.x);
+        double A2 = atan2(Y.y, Y.x);
         return (A1 + eps < A2);
     }
 
@@ -188,7 +186,16 @@ namespace ConvexHull{
         }
     }
 
+    void clear_data(){
+        convex.clear();
+        Xcoor.clear();
+        Ycoor.clear();
+        x_init.clear();
+        y_init.clear();
+    }
+
     vector<pii> random_convex_hull(int n, int MINX, int MAXX, int MINY, int MAXY){
+        clear_data();
         random_points(n, MINX, MAXX, MINY, MAXY);
         random_convex_vector();
         Consecutive_generate(n);
