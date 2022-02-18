@@ -15,6 +15,7 @@
 #define bit(x,i) ((x >> i) & 1)
 #define MAX_ARR_SIZE 486010000
 #define isTLE (1.0*clock()/CLOCKS_PER_SEC > 0.95)
+#define overbit(i, type, MASK, x) for (int i = (type == 1 ? x : (MASK-1)^x); i > 0; i ^= (i & -i))
 using namespace std;
 const int MOD = 1e9 + 7;
 
