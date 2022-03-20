@@ -94,8 +94,10 @@ void Make_file_name(){
 }
 
 
+
+
 /** ----------------- Default Random Algorithm ------------------ **/
-namespace ConvexHull{
+namespace ConvexHull{ // Stolen from https://cglab.ca/~sander/misc/ConvexGeneration/convex.html
     const double eps = 1e-9;
     bool comp_angle(const pii& X, const pii& Y){
         double A1 = atan2(X.y, X.x);
@@ -128,7 +130,7 @@ namespace ConvexHull{
                 res.ep(p - lastmin);
                 lastmin = p;
             }
-            else{
+            else {
                 res.ep(lastmax - p);
                 lastmax = p;
             }
@@ -169,7 +171,7 @@ namespace ConvexHull{
         }
     }
 
-    void shift_back(){
+    void shift_hull_back(){
         int xShift = minX - minpolyX;
         int yShift = minY - minpolyY;
 
@@ -187,11 +189,11 @@ namespace ConvexHull{
     }
 
     void clear_data(){
-        convex.clear();
-        Xcoor.clear();
-        Ycoor.clear();
         x_init.clear();
         y_init.clear();
+        Xcoor.clear();
+        Ycoor.clear();
+        convex.clear();
     }
 
     vector<pii> random_convex_hull(int n, int MINX, int MAXX, int MINY, int MAXY){
@@ -199,31 +201,170 @@ namespace ConvexHull{
         random_points(n, MINX, MAXX, MINY, MAXY);
         random_convex_vector();
         Consecutive_generate(n);
-        shift_back();
+        shift_hull_back();
         return convex;
+    }
+}
+
+namespace Array{
+    vector<int> random_array(int len, int Llim, int Rlim){
+        vector<int> a;
+        a.ep(0);
+        for (int i = 1; i <= len; i ++) a.ep(UID(Llim, Rlim));
+        return a;
+    }
+
+    vector<vector<int>> random_matrix(int row, int col, int Llim, int Rlim){
+        vector<vector<int>> a;
+        a.resize(row + 5);
+        for (int i = 1; i <= col; i ++) a[i] = random_array(col, Llim, Rlim);
+        return a;
+    }
+}
+
+struct edge{
+    int u,v,w;
+};
+namespace Graph{
+    ///Random tree (stolen from Nguyen Duc Kien)
+    vector<pii> random_tree(int num_node){
+        vector<pii> G;
+        for (int i = 2; i <= num_node; i ++){
+            int j = UID(1, i-1);
+            G.ep(i, j);
+        }
+        shuffle(all(G), RNG);
+        return G;
+    }
+
+    vector<pii> random_line_tree(int num_node, int root){
+        vector<pii> G;
+        vector<int> p;
+        p.resize(num_node + 10);
+        up(i,1,num_node) p[i] = i;
+        swap(p[root], p[1]);
+        shuffle(p.begin()+2, p.begin()+num_node+1, RNG);
+
+        up(i,2,num_node){
+            int x = p[i];
+            int y = p[i-1];
+            int seed = UID(0, 1);
+            if (seed) swap(x, y);
+            G.ep(x, y);
+        }
+        shuffle(all(G), RNG);
+        return G;
+    }
+
+    vector<edge> random_w_tree(int num_node, int L_wLIM, int R_wLIM){
+        vector<edge> G;
+        for (int i = 2; i <= num_node; i ++){
+            int j = UID(1, i-1);
+            int w = UID(L_wLIM, R_wLIM);
+            G.push_back({i, j, w});
+        }
+        shuffle(all(G), RNG);
+        return G;
+    }
+
+    ///Random graph (stolen from Nguyen Duc Kien)
+    vector<pii> random_graph(int num_node, int num_edge){
+        vector<pii> G = random_tree(num_node);
+        num_edge -= num_node - 1;
+        if(num_node <= 4000){
+            vector<vector<int>> m(num_node + 1, vector<int>(num_node + 1));
+            vector<pii> q;
+            for(auto e : G) m[e.first][e.second] = m[e.second][e.first] = 1;
+            up(i, 1, num_node) up(j, i+1, num_node) if (!m[i][j]) q.ep(i,j);
+
+            shuffle(all(q), RNG);
+            for(int i = 0; i < num_edge; i++){
+                int type = UID(0,1);
+                if (type) G.ep(q[i].first, q[i].second);
+                else G.ep(q[i].second, q[i].first);
+            }
+        }
+        else{
+            map<pii ,bool> m;
+            for (auto e : G) m[e] = m[{e.second, e.first}] = 1;
+            for(int i = 0; i < num_edge; i++){
+                int u = UID(1, num_node);
+                int v = UID(1, num_node);
+                while (u == v | m[{u,v}]) v = UID(1, num_node), u = UID(1, num_node);
+                m[{u,v}] = m[{v,u}] = 1;
+                G.ep(u, v);
+            }
+        }
+        shuffle(all(G), RNG);
+        return G;
+    }
+
+    vector<edge> random_w_graph(int num_node, int num_edge, int Lw, int Rw){
+        vector<edge> G = random_w_tree(num_node, Lw, Rw);
+        num_edge -= num_node - 1;
+        if(num_node <= 4000){
+            vector<vector<int>> m(num_node + 1, vector<int>(num_node + 1));
+            vector<pii> q;
+            for (auto e : G) m[e.u][e.v] = m[e.v][e.u] = 1;
+            up(i, 1, num_node) up(j, i+1, num_node) if (!m[i][j]) q.ep(i, j);
+
+            shuffle(all(q), RNG);
+            for(int i = 0; i < num_edge; i++){
+                int type = UID(0,1);
+                int w = UID(Lw, Rw);
+                if (type) G.push_back({q[i].first, q[i].second, w});
+                else G.push_back({q[i].second, q[i].first, w});
+            }
+        }
+        else{
+            map<pii ,bool> m;
+            for (auto e : G) m[{e.u, e.v}] = m[{e.v, e.u}] = 1;
+            for(int i = 0; i < num_edge; i++){
+                int u = UID(1, num_node);
+                int v = UID(1, num_node);
+
+                while (u == v || m[{u,v}]) v = UID(1, num_node), u = UID(1, num_node);
+                m[{u,v}] = m[{v,u}] = 1;
+                int w = UID(Lw, Rw);
+                G.push_back({u, v, w});
+            }
+        }
+        shuffle(all(G), RNG);
+        return G;
+    }
+}
+
+namespace String{
+    string random_string(int n, int have_digit, int have_upper, int have_lower){
+        if ((have_digit || have_upper || have_lower) == 0) return "";
+        string res = "";
+        vector<int> state;
+        if (have_digit) state.ep(0);
+        if (have_upper) state.ep(1);
+        if (have_lower) state.ep(2);
+        for (auto x : state) afo << x << "\n";
+        up(i,1,n){
+            int type = UID(0, (int)state.size() - 1);
+            int k = state[type];
+            if (k == 0) res += char(UID(1, 1000000000) % 10 + '0');
+            if (k == 1) res += char(UID(1, 1000000000) % 26 + 'A');
+            if (k == 2) res += char(UID(1, 1000000000) % 26 + 'a');
+        }
+        return res;
     }
 }
 
 
 
-
-/** ----------------- Main Processes ------------------ **/
-
-void prepare_test(){
-
-}
-
-void detail_test(int& test){
-
-}
-
+/** ----------------- Opening and Closing Files ------------------ **/
+void prepare_test();
+void detail_test(int& test);
 void generate_test(){
     prepare_test();
     Make_file_name();
     up(test, 1, maxtest){
         return_test = 0;
         fo.open(inp_file);
-        fo.clear();
         detail_test(test);
         if (return_test == 1) {
             fo.close();
@@ -237,11 +378,27 @@ void generate_test(){
     DeleteFile(inp_file);
     DeleteFile(out_file);
 }
-
 signed main(){
     ios_base::sync_with_stdio(false);
     cin.tie(0);
 
     maxtest = 1;
     generate_test();
+}
+
+
+
+
+using namespace ConvexHull;
+using namespace Array;
+using namespace Graph;
+using namespace String;
+
+/** ----------------- Main Generation ------------------ **/
+void prepare_test(){
+
+}
+
+void detail_test(int& test){
+
 }
