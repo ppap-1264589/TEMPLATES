@@ -3,97 +3,116 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define up(i,a,b) for (int i = (int)a; i <= (int)b; i++)
+
 typedef struct Trie Trie;
-
-struct Trie{ //tru cho struct Trie nay ra, cac tu Trie con lai, deu duoc hieu la (struct Trie)
-    char data;
+struct Trie{
     Trie *child[27];
-    int cnt;
+    char data;
+    int pref;
+    int exist;
 };
 
-Trie *New_node(char data){
-    //allocate memory for a Trie
-    Trie node = (Trie)calloc(1, sizeof(Trie));
-    for (int i = 0; i < 26; i++){
-        node->child[i] = NULL;
-    }
-    node->cnt = 0;
+Trie *ROOT;
+
+Trie *CreateNode(char data){
+    Trie *node = (Trie*)malloc(1 * sizeof(Trie));  //Cap bo nho cho con tro node kieu Trie
+    up(i,0,26) node->child[i] = NULL;
     node->data = data;
+    node->pref = 0;
+    node->exist = 0;
     return node;
-};
+}
 
-void Free_node(Trie *node){
-    //first, free the node in tree
-    for (int i = 0; i < 26; i++){
+void FreeNode(Trie *node){ //DFS
+    up(i,0,26){
         if (node->child[i] != NULL){
-            Free_node(node->child[i]);
+            FreeNode(node->child[i]);
         }
     }
-    //then, free the whole pointer
     free(node);
 }
 
 void Insert(Trie *root, char *word){
     Trie *cur = root;
-    for (int i = 0; i < strlen(word); i++){
+    for (int i = 0; word[i] != '\0'; i++){
         int id = word[i] - 'a';
-        if (cur->child[id] == NULL){ //Chi tao node moi khi khong tim duoc child ke tiep
-            cur->child[id] = New_node(word[i]);
+        if (cur->child[id] == NULL){ //Chi chen them khi khong tim thay node da co trong Trie
+            cur->child[id] = CreateNode(word[i]);
         }
         cur = cur->child[id];
-        ++cur->cnt;
+        ++cur->pref;
     }
+    ++cur->exist;
 }
 
-int Count(Trie *root, char *word){
+bool Find(Trie *root, char *word){
     Trie *cur = root;
-    for (int i = 0; i < strlen(word); i++){
+    for (int i = 0; word[i] != '\0'; i++){
         int id = word[i] - 'a';
-        if (cur->child[id] == NULL) return 0; //Ngay khi cham den mot node khong ton tai -> khong tim thay tu do
+        if (cur->child[id] == NULL) return 0; //Chac chan khong tim thay neu chay ra ngoai cac node da biet
         cur = cur->child[id];
     }
-    return cur->cnt;
+    return cur->exist;
 }
 
-void Remove(Trie *root, char *word){
-    if (root == NULL) return;
-    if (word[0] == '\0'){
-        --root->cnt;
-        return;
+bool Remove(Trie *cur, char *word, int pos){
+    if (word[pos] != '\0'){
+        int id = word[pos] - 'a';
+        bool isChildRemoved = Remove(cur->child[id], word, pos+1);
+        if (isChildRemoved) cur->child[id] = NULL;
     }
+    else --cur->exist; //Cuoi tu
 
-    int id = word[0] - 'a';
-    Remove(root->child[id], word+1);
-
-    if (root->child[id] == NULL && root->cnt == 0){
-        free(root);
-        root = NULL;
+    if (cur != ROOT){ //Dam bao khong free(ROOT)
+        --cur->pref;
+        if (cur->pref == 0){
+            free(cur);
+            return true;
+        }
     }
+    return false;
 }
 
-char s[101];
-int n,m;
+void Undo(Trie *T, char* word){
+    if (Find(T, word) == 0){
+        printf("WORD NOT FOUND IN DICTIONARY !\n");
+        exit(0);
+    }
+    Remove(T, word, 0);
+}
 
-int main(){
+int n,q;
+char s[201];
+char t[201];
+
+signed main(){
     #define Task "A"
     if (fopen(Task".inp", "r")){
         freopen(Task".inp", "r", stdin);
         freopen(Task".out", "w", stdout);
     }
+    ROOT = CreateNode('\0'); //Default node
 
-    Trie *T = New_node('\0');
+    Trie *T;
+    T = CreateNode('\0');
 
     scanf("%d", &n);
-    for (int i = 1; i <= n; i++){
+    up(i,1,n){
         scanf("%s", s);
         Insert(T, s);
     }
 
-    scanf("%d", &m);
-    for (int i = 1; i <= m; i++){
+    scanf("%d", &q);
+    up(i,1,q){
+        int type;
+        scanf("%d", &type);
         scanf("%s", s);
-        printf("%d\n", Count(T, s));
+        if (type == 1) Insert(T, s);
+        if (type == 2) printf("%d\n", Find(T, s));
+        if (type == 3) Undo(T, s);
     }
 
-	Free_node(T);
+    FreeNode(ROOT);
+    FreeNode(T);
 }
