@@ -37,7 +37,7 @@ void Insert(Trie *root, char *word){
     Trie *cur = root;
     for (int i = 0; i < strlen(word); i++){
         int id = word[i] - 'a';
-        if (cur->child[id] == NULL){
+        if (cur->child[id] == NULL){ //Chi tao node moi khi khong tim duoc child ke tiep
             cur->child[id] = New_node(word[i]);
         }
         cur = cur->child[id];
